@@ -1,17 +1,17 @@
 // app/layout.tsx
 import './globals.css';
+import { WalletProviderContext } from '@/components/WalletProvider';
 import { ReactNode } from 'react';
-
-export const metadata = {
-  title: 'Medisolana',
-  description: 'Upload and store encrypted medical records using IPFS and Solana',
-};
+import Header from '@/components/Header';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
-        <main className="container mx-auto p-6">{children}</main>
+      <body>
+        <Header />
+        <WalletProviderContext>
+          {children}
+        </WalletProviderContext>
       </body>
     </html>
   );
