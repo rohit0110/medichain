@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 
 const dummyDocuments = [
   { id: 1, title: 'Blood Test - John Doe', date: '2025-06-01' },
@@ -24,26 +25,23 @@ export default function DoctorPage() {
         placeholder="Search documents..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full p-2 mb-6 rounded-md bg-gray-700 text-white border border-gray-600 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className="w-full p-2 mb-6 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
       />
-
 
       <div className="space-y-4">
         {filteredDocs.length === 0 ? (
           <p className="text-gray-400">No documents found.</p>
         ) : (
           filteredDocs.map(doc => (
-            <div
-              key={doc.id}
-              className="p-4 bg-gray-800 shadow rounded-md"
-            >
-              <h2 className="text-lg font-semibold text-white">{doc.title}</h2>
-              <p className="text-sm text-gray-300">Date: {doc.date}</p>
-            </div>
+            <Link key={doc.id} href={`doctor/document/${doc.id}`}>
+              <div className="p-4 bg-gray-800 shadow rounded-md hover:bg-gray-700 transition cursor-pointer">
+                <h2 className="text-lg font-semibold text-white">{doc.title}</h2>
+                <p className="text-sm text-gray-400">Date: {doc.date}</p>
+              </div>
+            </Link>
           ))
         )}
       </div>
-
     </main>
   );
 }
