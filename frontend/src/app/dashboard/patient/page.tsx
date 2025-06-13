@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
-
 import React, { useState } from 'react';
+import UploadDocumentModal from '@/components/UploadPdf';
 
 const dummyDocuments = [
   { id: 1, title: 'Blood Test - May', date: '2025-06-01' },
@@ -11,19 +11,24 @@ const dummyDocuments = [
 export default function PatientPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [docs, setDocs] = useState(dummyDocuments);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const filteredDocs = docs.filter(doc =>
     doc.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddDocument = () => {
-    // Simulated new document for demo
+    setIsModalOpen(true);
+  };
+
+  const handleUpload = async (file: File, title: string, description?: string) => {
     const newDoc = {
       id: docs.length + 1,
-      title: `New Document - ${new Date().toLocaleDateString()}`,
+      title,
       date: new Date().toISOString().split('T')[0],
     };
     setDocs(prev => [...prev, newDoc]);
+    console.log(description)
   };
 
   return (
@@ -51,14 +56,20 @@ export default function PatientPage() {
         ) : (
           filteredDocs.map(doc => (
             <Link href={`patient/document/${doc.id}`} key={doc.id}>
-                <div className="p-4 bg-gray-800 shadow rounded-md hover:bg-gray-700 cursor-pointer transition">
-                    <h2 className="text-lg font-semibold text-white">{doc.title}</h2>
-                    <p className="text-sm text-gray-300">Date: {doc.date}</p>
-                </div>
+              <div className="p-4 bg-gray-800 shadow rounded-md hover:bg-gray-700 cursor-pointer transition">
+                <h2 className="text-lg font-semibold text-white">{doc.title}</h2>
+                <p className="text-sm text-gray-300">Date: {doc.date}</p>
+              </div>
             </Link>
           ))
         )}
       </div>
+
+      <UploadDocumentModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onUpload={handleUpload}
+      />
     </main>
   );
 }
