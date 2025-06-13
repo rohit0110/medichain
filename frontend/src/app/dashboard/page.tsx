@@ -4,6 +4,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import RoleSelector from '@/components/RouteSelector';
+import AirdropButton from '@/components/AirdropButton';
 
 export default function Dashboard() {
   const { connected, connecting, publicKey } = useWallet();
@@ -28,6 +29,9 @@ export default function Dashboard() {
 
   return (
     <main className="p-4">
+
+      <AirdropButton />
+
       <h1 className="text-xl font-semibold text-white">Welcome to your dashboard</h1>
       <p className="text-white">Your wallet: {publicKey?.toBase58()}</p>
       <RoleSelector />
