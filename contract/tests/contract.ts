@@ -168,4 +168,22 @@ describe("contract", () => {
     const docProfile = await program.account.doctorProfile.fetch(doctorPDA);
     assert.notInclude(docProfile.documents.map(k => k.toBase58()), documentPDAs[0].toBase58());
   });
+
+  it("Deletes document", async () => {
+    const [patientPDA] = getPatientProfilePDA();
+    const [docPDA] = getDocumentPDA(ipfsHashes[0]);
+    await program.methods.deleteDocument(ipfsHashes[0])
+      .accounts({
+        document: docPDA,
+        patientProfile: patientPDA,
+        user: patient.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([patient])
+      .rpc();
+    const accInfo = await provider.connection.getAccountInfo(docPDA);
+    assert.isNull(accInfo, "Document account should be deleted");
+    const profile = await program.account.patientProfile.fetch(patientPDA);
+    assert.notInclude(profile.documents.map(k => k.toBase58()), docPDA.toBase58(), "Document should be removed from patient profile");
+  });
 });

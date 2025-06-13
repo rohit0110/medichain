@@ -33,30 +33,17 @@ pub mod contract {
     }
 
     pub fn grant_access(ctx: Context<ModifyAccess>, doctor_pubkey: Pubkey, _ipfs_hash: String) -> Result<()> {
-        msg!("=== Starting grant_access ===");
-        msg!("Doctor pubkey: {}", doctor_pubkey);
-        
         let document = &mut ctx.accounts.document;
         let doctor_profile = &mut ctx.accounts.doctor_profile;
-        
-        msg!("Current document access_list length: {}", document.access_list.len());
-        msg!("Current doctor_profile documents length: {}", doctor_profile.documents.len());
         
         // Check if doctor already has access
         if document.access_list.contains(&doctor_pubkey) {
             msg!("Doctor already has access");
             return Ok(());
         }
-        
-        msg!("About to push to access_list");
+    
         document.access_list.push(doctor_pubkey);
-        msg!("Successfully added to access_list");
-        
-        msg!("About to push to doctor profile");
         doctor_profile.documents.push(document.key());
-        msg!("Successfully added to doctor profile");
-        
-        msg!("=== Grant access completed ===");
         Ok(())
     }
 
@@ -69,6 +56,18 @@ pub mod contract {
         if let Some(pos) = ctx.accounts.doctor_profile.documents.iter().position(|&x| x == document.key()) {
             ctx.accounts.doctor_profile.documents.remove(pos);
         }
+        Ok(())
+    }
+
+    pub fn delete_document(ctx: Context<DeleteDocument>, _ipfs_hash: String) -> Result<()> {
+        let document = &mut ctx.accounts.document;
+        require!(document.owner == ctx.accounts.user.key(), ContractError::Unauthorized);
+        
+        // Remove the document from the patient's profile
+        if let Some(pos) = ctx.accounts.patient_profile.documents.iter().position(|&x| x == document.key()) {
+            ctx.accounts.patient_profile.documents.remove(pos);
+        }
+
         Ok(())
     }
 
@@ -143,6 +142,29 @@ pub struct ModifyAccess<'info> {
         bump
         )]
     pub doctor_profile: Account<'info, DoctorProfile>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(ipfs_hash: String)]
+pub struct DeleteDocument<'info> {
+    #[account(
+        mut,
+        close = user, // Close the account and transfer lamports to the user
+        constraint = document.owner == user.key(),
+        seeds = [b"document", user.key().as_ref(), document.ipfs_hash.as_bytes()],
+        bump
+    )]
+    pub document: Account<'info, Document>,
+    #[account(
+        mut,
+        seeds = [b"patient_profile", user.key().as_ref()],
+        constraint = patient_profile.user == user.key(),
+        bump
+    )]
+    pub patient_profile: Account<'info, PatientProfile>,
+    #[account(mut)]
+    pub user: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
