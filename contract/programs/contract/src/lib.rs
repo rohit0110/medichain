@@ -6,10 +6,12 @@ declare_id!("98TGc38djoRGd7rczpJ2nJWgLv2oNpXrDcGkJ8n4kPDG");
 pub mod contract {
     use super::*;
 
-    pub fn initialize_document(ctx: Context<InitializeDocument>, ipfs_hash: String, title: String) -> Result<()> {
+    pub fn initialize_document(ctx: Context<InitializeDocument>, ipfs_hash: String, title: String, description: String, salt: [u8;16]) -> Result<()> {
         let document = &mut ctx.accounts.document;
         document.ipfs_hash = ipfs_hash;
         document.title = title;
+        document.description = description;
+        document.salt = salt;
         document.owner = ctx.accounts.user.key();
         document.access_list = vec![]; // Initialize with an empty access list
         document.access_list.push(ctx.accounts.user.key()); // Add the user to the access list
@@ -75,7 +77,7 @@ pub mod contract {
 }
 
 #[derive(Accounts)]
-#[instruction(ipfs_hash: String, title: String)]
+#[instruction(ipfs_hash: String, title: String, description: String, salt: [u8;16])]
 pub struct InitializeDocument<'info> {
     #[account(
         init,
@@ -175,6 +177,9 @@ pub struct Document {
     pub ipfs_hash: String,
     #[max_len(64)]
     pub title: String,
+    #[max_len(256)]
+    pub description: String,
+    pub salt: [u8;16], // Unique salt for the document
     pub owner: Pubkey,
     #[max_len(10)]
     pub access_list: Vec<Pubkey>, // List of addresses with access
