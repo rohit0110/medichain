@@ -11,6 +11,10 @@ describe("contract", () => {
   const patient = anchor.web3.Keypair.generate();
   const doctor = anchor.web3.Keypair.generate();
   const ipfsHashes = ["ipfs1", "ipfs2"];
+  const salts = [
+    "11111111111111111111111111111111",
+    "22222222222222222222222222222222"
+  ].map(s => new Uint8Array(Buffer.from(s, 'hex')));
   const documentPDAs: anchor.web3.PublicKey[] = [];
 
   const airdrop = async (key: anchor.web3.PublicKey) => {
@@ -76,10 +80,11 @@ describe("contract", () => {
 
     for (let i = 0; i < ipfsHashes.length; i++) {
       const ipfsHash = ipfsHashes[i];
+      const salt = salts[i];
       const [docPDA] = getDocumentPDA(ipfsHash);
       documentPDAs.push(docPDA);
 
-      await program.methods.initializeDocument(ipfsHash, `Title ${i + 1}`)
+      await program.methods.initializeDocument(ipfsHash, `Title ${i + 1}`, `Description ${i + 1}`, salt)
         .accounts({
           document: docPDA,
           patientProfile: patientPDA,
@@ -167,5 +172,23 @@ describe("contract", () => {
 
     const docProfile = await program.account.doctorProfile.fetch(doctorPDA);
     assert.notInclude(docProfile.documents.map(k => k.toBase58()), documentPDAs[0].toBase58());
+  });
+
+  it("Deletes document", async () => {
+    const [patientPDA] = getPatientProfilePDA();
+    const [docPDA] = getDocumentPDA(ipfsHashes[0]);
+    await program.methods.deleteDocument(ipfsHashes[0])
+      .accounts({
+        document: docPDA,
+        patientProfile: patientPDA,
+        user: patient.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([patient])
+      .rpc();
+    const accInfo = await provider.connection.getAccountInfo(docPDA);
+    assert.isNull(accInfo, "Document account should be deleted");
+    const profile = await program.account.patientProfile.fetch(patientPDA);
+    assert.notInclude(profile.documents.map(k => k.toBase58()), docPDA.toBase58(), "Document should be removed from patient profile");
   });
 });
