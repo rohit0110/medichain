@@ -92,11 +92,11 @@ export default function UploadDocumentModal({
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Upload Document</h2>
+          <h2 className="text-xl font-semibold text-black">Upload Document</h2>
           <button
             onClick={handleClose}
             disabled={isUploading}
-            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+            className="text-gray-400 hover:text-black disabled:opacity-50"
           >
             <X size={24} />
           </button>
@@ -120,8 +120,8 @@ export default function UploadDocumentModal({
             {selectedFile ? (
               <div className="space-y-2">
                 <FileText className="mx-auto h-12 w-12 text-green-500" />
-                <p className="text-sm font-medium text-gray-900">{selectedFile.name}</p>
-                <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
+                <p className="text-sm font-medium text-black">{selectedFile.name}</p>
+                <p className="text-xs text-black">{formatFileSize(selectedFile.size)}</p>
                 <button
                   type="button"
                   onClick={() => setSelectedFile(null)}
@@ -133,12 +133,12 @@ export default function UploadDocumentModal({
             ) : (
               <div className="space-y-2">
                 <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                <p className="text-sm text-gray-600">Drag and drop your PDF here</p>
-                <p className="text-xs text-gray-500">or</p>
+                <p className="text-sm text-black">Drag and drop your PDF here</p>
+                <p className="text-xs text-black">or</p>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-black bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   Choose file
                 </button>
@@ -155,7 +155,7 @@ export default function UploadDocumentModal({
 
           {/* Title Input */}
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="title" className="block text-sm font-medium text-black mb-1">
               Document Title *
             </label>
             <input
@@ -164,14 +164,14 @@ export default function UploadDocumentModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter document title"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
               required
             />
           </div>
 
           {/* Description Input */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="description" className="block text-sm font-medium text-black mb-1">
               Description (Optional)
             </label>
             <textarea
@@ -180,7 +180,7 @@ export default function UploadDocumentModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of the document"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
             />
           </div>
 
@@ -190,7 +190,7 @@ export default function UploadDocumentModal({
               type="button"
               onClick={handleClose}
               disabled={isUploading}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="flex-1 px-4 py-2 text-sm font-medium text-black bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
             >
               Cancel
             </button>

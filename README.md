@@ -1,11 +1,12 @@
 // TODO
 When doctor clicks on doc from list, get encrypted file and then decrypt client side?
-Whenever Upload button is clicked from patient side it should encrypt and put the file on IPFS
+Whenever Upload button is clicked from patient side it should encrypt and put the file on IPFS <-------
 Add Navbar
 Add document limit reached error
 add test for multiple users adding a doctor and checking list
 add conditions for not being able to add more doctors to a document if already at limit
-Delete Document
+~Delete Document~
+
 
 // KEEP IN MIND WHILE BUILDING SMART CONTRACT
 Upload function for PDF
