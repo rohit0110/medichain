@@ -1,7 +1,6 @@
-'use client';
-import Link from 'next/link';
-import React, { useState } from 'react';
-import UploadDocumentModal from '@/components/UploadPdf';
+import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import UploadDocumentModal from '../components/UploadPdf';
 
 const dummyDocuments = [
   { id: 1, title: 'Blood Test - May', date: '2025-06-01' },
@@ -28,7 +27,7 @@ export default function PatientPage() {
       date: new Date().toISOString().split('T')[0],
     };
     setDocs(prev => [...prev, newDoc]);
-    console.log(description)
+    console.log(description);
   };
 
   return (
@@ -55,7 +54,7 @@ export default function PatientPage() {
           <p className="text-gray-400">No documents found.</p>
         ) : (
           filteredDocs.map(doc => (
-            <Link href={`patient/document/${doc.id}`} key={doc.id}>
+            <Link to={`/dashboard/patient/document/${doc.id}`} key={doc.id}>
               <div className="p-4 bg-gray-800 shadow rounded-md hover:bg-gray-700 cursor-pointer transition">
                 <h2 className="text-lg font-semibold text-white">{doc.title}</h2>
                 <p className="text-sm text-gray-300">Date: {doc.date}</p>

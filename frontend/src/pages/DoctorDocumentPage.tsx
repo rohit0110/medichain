@@ -1,9 +1,7 @@
-'use client';
-
-import { useParams } from 'next/navigation';
+import { useParams } from 'react-router-dom';
 
 export default function DoctorDocumentPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
 
   return (
     <main className="p-6 text-white">

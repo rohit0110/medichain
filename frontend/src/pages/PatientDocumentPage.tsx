@@ -1,10 +1,8 @@
-'use client';
-
-import { useParams } from 'next/navigation';
+import { useParams } from 'react-router-dom';
 import { useState } from 'react';
 
-export default function DocumentAccessPage() {
-  const { id } = useParams();
+export default function PatientDocumentPage() {
+  const { id } = useParams<{ id: string }>();
   const [walletInput, setWalletInput] = useState('');
   const [allowedWallets, setAllowedWallets] = useState<string[]>([]);
 
