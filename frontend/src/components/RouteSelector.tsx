@@ -1,30 +1,69 @@
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
-// import { getProgram, initializePatientProfile } from '../anchor/setup';
+import { getPatientProfilePDA,getDoctorProfilePDA, program } from '../anchor/setup';
+import { SystemProgram } from '@solana/web3.js';
 
 const RoleSelector = () => {
   const navigate = useNavigate();
-  const { wallet, connected } = useWallet();
+  const { wallet, connected, publicKey, sendTransaction } = useWallet();
+  const connection = program.provider.connection;
 
   const handleRoleSelect = async (role: 'doctor' | 'patient') => {
     if (!wallet) {
       console.error('Wallet not connected or not wallet');
       return;
     }
-
+    if (!publicKey) {
+        alert("Missing required data");
+        return;
+    }
     try {
       if (role === 'patient') {
-        // Get the program instance with the correct wallet type
-        // const program = getProgram(wallet);
-        
-        // // Initialize patient profile
-        // await initializePatientProfile(program, wallet);
-        
+        const patientProfilePDA = await getPatientProfilePDA(publicKey);
+
+        const existingAccount = await program.account.patientProfile.fetchNullable(patientProfilePDA);
+      
+        if (existingAccount) {
+          console.log("Patient profile already exists.");
+          navigate(`/dashboard/patient`);
+          return;
+        }
+
+        const tx = await program.methods
+          .initializePatientProfile()
+          .accounts({
+            patientProfile: patientProfilePDA,
+            user: publicKey,
+            systemProgram: SystemProgram.programId,
+          })
+          .transaction();
+        const txSig = await sendTransaction(tx, connection);
+        console.log(
+          `Patient Profile Created! View transaction: https://solana.fm/tx/${txSig}?cluster=devnet-alpha`
+        );
         console.log('Patient profile initialized successfully');
       } else if (role === 'doctor') {
-        // Similar logic for doctor if needed
-        // const program = getProgram(wallet);
-        // await initializeDoctorProfile(program, wallet);
+        const doctorProfilePDA = await getDoctorProfilePDA(publicKey);
+
+        const existingAccount = await program.account.doctorProfile.fetchNullable(doctorProfilePDA);
+        if (existingAccount) {
+          console.log("Doctor profile already exists.");
+          navigate(`/dashboard/doctor`);
+          return;
+        }
+        const tx = await program.methods
+          .initializeDoctorProfile()
+          .accounts({
+            doctorProfile: doctorProfilePDA,
+            user: publicKey,
+            systemProgram: SystemProgram.programId,
+          })
+          .transaction();
+        const txSig = await sendTransaction(tx, connection);
+        console.log(
+          `Doctor Profile Created! View transaction: https://solana.fm/tx/${txSig}?cluster=devnet-alpha`
+        );
+        console.log('Doctor profile initialized successfully');
       }
       
       // Navigate to dashboard
