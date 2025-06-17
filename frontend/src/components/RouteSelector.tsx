@@ -20,7 +20,7 @@ const RoleSelector = () => {
     try {
       if (role === 'patient') {
         const patientProfilePDA = await getPatientProfilePDA(publicKey);
-
+        console.log("Patient Profile PDA:", patientProfilePDA.toBase58());
         const existingAccount = await program.account.patientProfile.fetchNullable(patientProfilePDA);
       
         if (existingAccount) {
@@ -37,6 +37,10 @@ const RoleSelector = () => {
             systemProgram: SystemProgram.programId,
           })
           .transaction();
+        tx.feePayer = publicKey!;
+        tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+        const simulation = await connection.simulateTransaction(tx);
+        console.log('🧪 Transaction simulation result:', simulation);
         const txSig = await sendTransaction(tx, connection);
         console.log(
           `Patient Profile Created! View transaction: https://solana.fm/tx/${txSig}?cluster=devnet-alpha`
@@ -59,6 +63,10 @@ const RoleSelector = () => {
             systemProgram: SystemProgram.programId,
           })
           .transaction();
+        tx.feePayer = publicKey!;
+        tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+        const simulation = await connection.simulateTransaction(tx);
+        console.log('🧪 Transaction simulation result:', simulation);
         const txSig = await sendTransaction(tx, connection);
         console.log(
           `Doctor Profile Created! View transaction: https://solana.fm/tx/${txSig}?cluster=devnet-alpha`

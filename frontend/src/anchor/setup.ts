@@ -3,7 +3,7 @@ import { IDL, type Contract } from "./idl";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Buffer } from "buffer";
 import { PROGRAM_ID } from "../constants/constants";
-
+import { convertIpfsHashToSHA } from "../components/ConvertToHash";
 
 // Constants
 // export const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
@@ -30,8 +30,9 @@ function getPatientProfilePDA(patient: PublicKey): PublicKey {
 }
 
 function getDocumentPDA(patient: PublicKey, ipfsHash: string): PublicKey {
+  const hashBytes = convertIpfsHashToSHA(ipfsHash);
   return PublicKey.findProgramAddressSync(
-    [Buffer.from("document"), patient.toBuffer(), Buffer.from(ipfsHash)],
+    [Buffer.from("document"), patient.toBuffer(), Buffer.from(hashBytes)],
     PROGRAM_ID
   )[0];
 }

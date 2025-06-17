@@ -2,6 +2,8 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { Contract } from "../target/types/contract";
 import { assert } from "chai";
+import { createHash } from "crypto";
+
 
 describe("contract", () => {
   const provider = anchor.AnchorProvider.env();
@@ -35,10 +37,15 @@ describe("contract", () => {
     );
 
   const getDocumentPDA = (ipfsHash: string) =>
-    anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("document"), patient.publicKey.toBuffer(), Buffer.from(ipfsHash)],
-      program.programId
-    );
+  anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("document"),
+      patient.publicKey.toBuffer(),
+      createHash('sha256').update(ipfsHash).digest(), // hashed ipfsHash
+    ],
+    program.programId
+  );
+
 
   it("Initializes patient and doctor profiles", async () => {
     await airdrop(patient.publicKey);
