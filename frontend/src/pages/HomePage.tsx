@@ -1,24 +1,17 @@
-'use client';
-
 import { useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
-
-const WalletMultiButton = dynamic(
-  () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
-  { ssr: false }
-);
+import { useNavigate } from 'react-router-dom';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 export default function HomePage() {
   const { connected } = useWallet();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (connected) {
-      router.push('/dashboard');
+      navigate('/dashboard');
     }
-  }, [connected]);
+  }, [connected, navigate]);
 
   return (
     <main className="h-screen flex flex-col items-center justify-center">

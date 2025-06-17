@@ -1,7 +1,5 @@
-'use client';
-
-import React, { useState } from 'react';
-import Link from 'next/link';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const dummyDocuments = [
   { id: 1, title: 'Blood Test - John Doe', date: '2025-06-01' },
@@ -33,7 +31,7 @@ export default function DoctorPage() {
           <p className="text-gray-400">No documents found.</p>
         ) : (
           filteredDocs.map(doc => (
-            <Link key={doc.id} href={`doctor/document/${doc.id}`}>
+            <Link key={doc.id} to={`/dashboard/doctor/document/${doc.id}`}>
               <div className="p-4 bg-gray-800 shadow rounded-md hover:bg-gray-700 transition cursor-pointer">
                 <h2 className="text-lg font-semibold text-white">{doc.title}</h2>
                 <p className="text-sm text-gray-400">Date: {doc.date}</p>

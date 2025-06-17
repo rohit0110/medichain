@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-
+use sha2::{Sha256, Digest};
 declare_id!("98TGc38djoRGd7rczpJ2nJWgLv2oNpXrDcGkJ8n4kPDG");
 
 #[program]
@@ -83,7 +83,7 @@ pub struct InitializeDocument<'info> {
         init,
         payer = user, 
         space = 8 + Document::INIT_SPACE,
-        seeds = [b"document", user.key().as_ref(), ipfs_hash.as_bytes()],
+        seeds = [b"document", user.key().as_ref(), &hash_ipfs(&ipfs_hash).as_ref()],
         bump
     )]
     pub document: Account<'info, Document>,
@@ -133,7 +133,7 @@ pub struct InitializeDoctor<'info> {
 pub struct ModifyAccess<'info> {
     #[account(
         mut,
-        seeds = [b"document", owner.key().as_ref(), ipfs_hash.as_bytes()],
+        seeds = [b"document", owner.key().as_ref(), &hash_ipfs(&ipfs_hash).as_ref()],
         bump
     )]
     pub document: Account<'info, Document>,
@@ -154,7 +154,7 @@ pub struct DeleteDocument<'info> {
         mut,
         close = user, // Close the account and transfer lamports to the user
         constraint = document.owner == user.key(),
-        seeds = [b"document", user.key().as_ref(), document.ipfs_hash.as_bytes()],
+        seeds = [b"document", user.key().as_ref(), &hash_ipfs(&ipfs_hash).as_ref()],
         bump
     )]
     pub document: Account<'info, Document>,
@@ -209,4 +209,9 @@ pub enum ContractError {
     NoPatientProfile
 }
 
+pub fn hash_ipfs(ipfs: &str) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    hasher.update(ipfs.as_bytes());
+    hasher.finalize().into()
+}
 
