@@ -7,6 +7,7 @@ add conditions for not being able to add more doctors to a document if already a
 ~Delete Document~
 add checks on doctor transactions for on the list that has been shared with them
 
+
 // KEEP IN MIND WHILE BUILDING SMART CONTRACT
 Upload function for PDF
 Track Docs owned by Patient
