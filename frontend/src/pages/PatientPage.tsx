@@ -10,6 +10,7 @@ import { WalletEncryptionService } from '../utils/WalletEncryption';
 interface Document {
   id: number;
   title: string;
+  description?: string;
   ipfsHash?: string;
   fileName?: string;
   fileSize?: number;
@@ -306,7 +307,7 @@ export default function PatientPage() {
           <p className="text-gray-400">No documents found.</p>
         ) : (
           filteredDocs.map(doc => (
-            <Link to={`/dashboard/patient/document/${doc.id}`} key={doc.id}>
+            <Link to={`/dashboard/patient/document/${doc.id}`} state={{doc}} key={doc.id}>
               <div className="p-4 bg-gray-800 shadow rounded-md hover:bg-gray-700 cursor-pointer transition">
                 <h2 className="text-lg font-semibold text-white">{doc.title}</h2>
                 {doc.ipfsHash && (

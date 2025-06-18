@@ -1,8 +1,16 @@
-import { useParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useState } from 'react';
 
 export default function PatientDocumentPage() {
-  const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const { doc } = location.state as {
+    doc: {
+      id: string;
+      title: string;
+      description?: string;
+    };
+  };
+
   const [walletInput, setWalletInput] = useState('');
   const [allowedWallets, setAllowedWallets] = useState<string[]>([]);
 
@@ -20,7 +28,8 @@ export default function PatientDocumentPage() {
 
   return (
     <main className="p-6 text-white">
-      <h1 className="text-3xl font-bold mb-4">Access Control for Document #{id}</h1>
+      <h1 className="text-3xl font-bold mb-4">Access Control for Document: {doc.title}</h1>
+      {doc.description && <p className="text-sm text-gray-400 mb-6">{doc.description}</p>}
 
       <div className="mb-6">
         <label className="block mb-2 text-gray-300">Add Wallet Address:</label>
