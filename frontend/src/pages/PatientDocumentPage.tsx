@@ -104,6 +104,11 @@ export default function PatientDocumentPage() {
       );
       
       // Refresh the access list after successful transaction
+      await connection.confirmTransaction(txSig, 'confirmed');
+      setAllowedWallets(prev => {
+        if (!prev.includes(trimmed)) return [...prev, trimmed];
+        return prev;
+      });
       await fetchAccessList();
       setWalletInput('');
     } catch (error) {
@@ -119,37 +124,41 @@ export default function PatientDocumentPage() {
       return;
     }
 
+    const doctorPubKey = new PublicKey(walletToRemove);
+    const doctorPda = getDoctorProfilePDA(doctorPubKey);
+
     setLoading(true);
     try {
-      const doctorPubKey = new PublicKey(walletToRemove);
-
-      // Assuming you have a revokeAccess method in your program
       const tx = await program.methods
         .revokeAccess(doctorPubKey, doc.ipfsHash)
         .accounts({
           document: documentPda,
+          doctorProfile: doctorPda,
           owner: publicKey,
           systemProgram: SystemProgram.programId,
         })
         .transaction();
-      tx.feePayer = publicKey!;
+
+      tx.feePayer = publicKey;
       tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
       const txSig = await sendTransaction(tx, connection);
+
       console.log(
         `Access revoked from wallet! View transaction: https://solana.fm/tx/${txSig}?cluster=devnet-alpha`
       );
-      
-      // Refresh the access list after successful transaction
+
+      await connection.confirmTransaction(txSig, 'confirmed');
+      setAllowedWallets(prev => prev.filter(w => w !== walletToRemove));
       await fetchAccessList();
+
     } catch (error) {
       console.error('Error revoking access:', error);
-      // If revokeAccess method doesn't exist, fall back to local state update
-      setAllowedWallets(allowedWallets.filter(wallet => wallet !== walletToRemove));
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <main className="p-6 text-white">
