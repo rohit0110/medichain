@@ -15,6 +15,7 @@ interface Document {
   salt?: string;
   patientAddress?: string;
   sharedAt?: string;
+  encryptedKey?: number[];
 }
 
 const dummyDocuments: Document[] = [];
@@ -30,7 +31,7 @@ export default function DoctorPage() {
   );
 
   useEffect(() => {
-    const fetchdocuments = async () => {
+    const fetchDocuments = async () => {
       if (!publicKey || !connected) {
         console.log('Wallet not connected, using dummy documents');
         setDocs(dummyDocuments);
@@ -38,54 +39,54 @@ export default function DoctorPage() {
       }
 
       setIsLoading(true);
-      
+
       try {
         console.log('Fetching shared documents for doctor:', publicKey.toString());
-        
-        // Get doctor profile PDA
+
         const doctorProfilePDA = getDoctorProfilePDA(publicKey);
-        
-        // Fetch doctor profile
+
         const doctorProfile = await program.account.doctorProfile.fetchNullable(doctorProfilePDA);
-        
+
         if (!doctorProfile) {
           console.log('No doctor profile found, using dummy documents');
           setDocs(dummyDocuments);
           return;
         }
 
-        console.log('Doctor profile found with', doctorProfile.documents?.length || 0, 'shared documents');
+        const documentEntries = doctorProfile.documents;
 
-        // If no shared documents, show empty state
-        if (!doctorProfile.documents || doctorProfile.documents.length === 0) {
+        if (!documentEntries || documentEntries.length === 0) {
           console.log('No shared documents found');
           setDocs([]);
           return;
         }
 
-        const documentAccounts = await Promise.all(
-          doctorProfile.documents.map((docPubkey: PublicKey) =>
-            program.account.document.fetch(docPubkey)
-          )
-        );
-        
-        interface OnChainDocument {
-          title: string;
-          description?: string;
-          ipfsHash?: string;
-          salt?: number[];
-        }
+        console.log('Doctor profile found with', documentEntries.length, 'shared documents');
 
-        const formatted: Document[] = documentAccounts.map((doc: OnChainDocument, i: number) => ({
-          id: i + 1,
-          title: doc.title,
-          ipfsHash: doc.ipfsHash,
-          salt: doc.salt ? doc.salt.map(b => b.toString(16).padStart(2, '0')).join('') : undefined,
-        }));
+        const formatted = (
+          await Promise.all(
+            documentEntries.map(async (entry: { document: PublicKey; encryptedKey: number[] }, i: number) => {
+              try {
+                const docAccount = await program.account.document.fetch(entry.document);
+
+                return {
+                  id: i + 1,
+                  title: docAccount.title,
+                  description: docAccount.description,
+                  ipfsHash: docAccount.ipfsHash,
+                  salt: docAccount.salt ? docAccount.salt.map(b => b.toString(16).padStart(2, '0')).join('') : undefined,
+                  encryptedKey: entry.encryptedKey,
+                } as Document;
+              } catch (err) {
+                console.warn('Failed to fetch document for entry', entry.document.toString(), err);
+                return null;
+              }
+            })
+          )
+        ).filter((doc): doc is Document => doc !== null);
 
         setDocs(formatted);
-        console.log('Loaded', formatted.length, 'shared documents from blockchain');
-        
+
       } catch (error) {
         console.error("Failed to load shared documents:", error);
         setDocs(dummyDocuments);
@@ -94,8 +95,9 @@ export default function DoctorPage() {
       }
     };
 
-    fetchdocuments();
+    fetchDocuments();
   }, [publicKey, connected]);
+
 
   return (
     <main className="p-6">

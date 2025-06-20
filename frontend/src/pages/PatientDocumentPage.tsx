@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { getDoctorProfilePDA, getDocumentPDA, program, connection } from '../anchor/setup';
 import { PublicKey, SystemProgram } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { ipfsService } from '../utils/IpfsService';
 
 export default function PatientDocumentPage() {
   const location = useLocation();
@@ -12,6 +13,7 @@ export default function PatientDocumentPage() {
       title: string;
       ipfsHash: string;
       description?: string;
+      aesKey?: string;
     };
   };
 
@@ -26,6 +28,7 @@ export default function PatientDocumentPage() {
   const documentPda = useMemo(() => {
     return publicKey ? getDocumentPDA(publicKey, doc.ipfsHash) : null;
   }, [publicKey, doc.ipfsHash]);
+
 
   // Fetch the current access list from the blockchain
   const fetchAccessList = async () => {
@@ -80,9 +83,11 @@ export default function PatientDocumentPage() {
         console.error('❌ Doctor profile does not exist on-chain');
         return;
       }
+      const encryptedKeyUint8 = ipfsService.encryptAESKeyForRecipient(doc.aesKey!, doctorPubKey);
+      const encryptedKey = Array.from(encryptedKeyUint8);
 
       const tx = await program.methods
-        .grantAccess(doctorPubKey, doc.ipfsHash)
+        .grantAccess(doctorPubKey, doc.ipfsHash, encryptedKey)
         .accounts({
           document: documentPda,
           owner: publicKey,

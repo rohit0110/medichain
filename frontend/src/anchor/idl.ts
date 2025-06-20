@@ -124,6 +124,15 @@ export type Contract = {
         {
           "name": "ipfsHash",
           "type": "string"
+        },
+        {
+          "name": "encryptedKey",
+          "type": {
+            "array": [
+              "u8",
+              256
+            ]
+          }
         }
       ]
     },
@@ -264,7 +273,32 @@ export type Contract = {
           {
             "name": "documents",
             "type": {
-              "vec": "publicKey"
+              "vec": {
+                "defined": "AccessGrant"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "AccessGrant",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "document",
+            "type": "publicKey"
+          },
+          {
+            "name": "encryptedKey",
+            "type": {
+              "array": [
+                "u8",
+                256
+              ]
             }
           }
         ]
@@ -411,6 +445,15 @@ export const IDL: Contract = {
         {
           "name": "ipfsHash",
           "type": "string"
+        },
+        {
+          "name": "encryptedKey",
+          "type": {
+            "array": [
+              "u8",
+              256
+            ]
+          }
         }
       ]
     },
@@ -551,7 +594,32 @@ export const IDL: Contract = {
           {
             "name": "documents",
             "type": {
-              "vec": "publicKey"
+              "vec": {
+                "defined": "AccessGrant"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "AccessGrant",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "document",
+            "type": "publicKey"
+          },
+          {
+            "name": "encryptedKey",
+            "type": {
+              "array": [
+                "u8",
+                256
+              ]
             }
           }
         ]

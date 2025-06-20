@@ -16,6 +16,7 @@ interface Document {
   fileSize?: number;
   contentType?: string;
   salt?: string;
+  aes_key?: string;
 }
 
 const dummyDocuments: Document[] = [];
@@ -173,6 +174,7 @@ export default function PatientPage() {
           fileSize: file.size,
           contentType: file.type,
           salt,
+          aes_key: encryptionKey,
         },
       ]);
 
