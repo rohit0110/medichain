@@ -34,9 +34,13 @@ pub mod contract {
         Ok(())
     }
 
-    pub fn grant_access(ctx: Context<ModifyAccess>, doctor_pubkey: Pubkey, _ipfs_hash: String) -> Result<()> {
+    pub fn grant_access(ctx: Context<ModifyAccess>, doctor_pubkey: Pubkey, _ipfs_hash: String, encrypted_key: [u8;256]) -> Result<()> {
         let document = &mut ctx.accounts.document;
         let doctor_profile = &mut ctx.accounts.doctor_profile;
+        let access_grant = AccessGrant {
+            document: document.key(),
+            encrypted_key,
+        };
         
         // Check if doctor already has access
         if document.access_list.contains(&doctor_pubkey) {
@@ -45,21 +49,33 @@ pub mod contract {
         }
     
         document.access_list.push(doctor_pubkey);
-        doctor_profile.documents.push(document.key());
+        doctor_profile.documents.push(access_grant);
         Ok(())
     }
 
     pub fn revoke_access(ctx: Context<ModifyAccess>, doctor_pubkey: Pubkey, _ipfs_hash: String) -> Result<()> {
         let document = &mut ctx.accounts.document;
+        let doctor_profile = &mut ctx.accounts.doctor_profile;
+
         require!(document.owner == ctx.accounts.owner.key(), ContractError::Unauthorized);
-        if let Some(pos) = document.access_list.iter().position(|&x| x == doctor_pubkey) {
+
+        // Remove doctor from access_list
+        if let Some(pos) = document.access_list.iter().position(|&key| key == doctor_pubkey) {
             document.access_list.remove(pos);
+        } else {
+            msg!("Doctor not in access list");
         }
-        if let Some(pos) = ctx.accounts.doctor_profile.documents.iter().position(|&x| x == document.key()) {
-            ctx.accounts.doctor_profile.documents.remove(pos);
+
+        // Remove the corresponding AccessGrant
+        if let Some(pos) = doctor_profile.documents.iter().position(|grant| grant.document == document.key()) {
+            doctor_profile.documents.remove(pos);
+        } else {
+            msg!("AccessGrant not found in doctor's profile");
         }
+
         Ok(())
     }
+
 
     pub fn delete_document(ctx: Context<DeleteDocument>, _ipfs_hash: String) -> Result<()> {
         let document = &mut ctx.accounts.document;
@@ -198,7 +214,13 @@ pub struct PatientProfile {
 pub struct DoctorProfile {
     pub user: Pubkey,
     #[max_len(10)]
-    pub documents: Vec<Pubkey>, // List of documents whos access has been given to the doctor
+    pub documents: Vec<AccessGrant>
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+pub struct AccessGrant {
+    pub document: Pubkey,
+    pub encrypted_key: [u8; 256], 
 }
 
 #[error_code]

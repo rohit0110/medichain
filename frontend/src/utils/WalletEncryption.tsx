@@ -79,4 +79,29 @@ export class WalletEncryptionService {
     }
     return uInt8Array;
   }
+
+  static async decryptAESKeyWithWallet(
+    encryptedAESKey: string,
+    wallet: WalletSigner,
+    salt: string,
+    documentId: number,
+    fileName: string
+  ): Promise<string> {
+    const message = `Encrypt document ${documentId} for file ${fileName} with salt ${salt}`;
+    const messageBytes = new TextEncoder().encode(message);
+    const signature = await wallet.signMessage(messageBytes);
+    const signatureHex = Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    const derivedKey = CryptoJS.SHA256(signatureHex).toString();
+    
+    const decrypted = CryptoJS.AES.decrypt(encryptedAESKey, derivedKey);
+    const decryptedKey = decrypted.toString(CryptoJS.enc.Utf8);
+
+    if (!decryptedKey) {
+      throw new Error("Decryption failed: Invalid derived key or encrypted AES key.");
+    }
+
+    return decryptedKey;
+  }
 }

@@ -19,6 +19,16 @@ describe("contract", () => {
   ].map(s => new Uint8Array(Buffer.from(s, 'hex')));
   const documentPDAs: anchor.web3.PublicKey[] = [];
 
+  function toUint8Array256(input: string): Uint8Array {
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(input);
+
+    const result = new Uint8Array(256);
+    result.set(bytes.slice(0, 256));
+
+    return result;
+  }
+
   const airdrop = async (key: anchor.web3.PublicKey) => {
     const sig = await provider.connection.requestAirdrop(key, 5 * anchor.web3.LAMPORTS_PER_SOL);
     await provider.connection.confirmTransaction(sig);
@@ -142,8 +152,9 @@ describe("contract", () => {
   it("Grants access to doctor", async () => {
     const [doctorPDA] = getDoctorProfilePDA();
     const [patientPDA] = getPatientProfilePDA();
+    const encryptedAESKey = toUint8Array256("KEY12345678901234567890123456789012");
 
-    await program.methods.grantAccess(doctor.publicKey, ipfsHashes[0])
+    await program.methods.grantAccess(doctor.publicKey, ipfsHashes[0], Array.from(encryptedAESKey))
       .accounts({
         document: documentPDAs[0],
         owner: patient.publicKey,
@@ -157,7 +168,11 @@ describe("contract", () => {
     assert.include(doc.accessList.map(k => k.toBase58()), doctor.publicKey.toBase58());
 
     const docProfile = await program.account.doctorProfile.fetch(doctorPDA);
-    assert.include(docProfile.documents.map(k => k.toBase58()), documentPDAs[0].toBase58());
+    // docProfile.documents is an array of { document, encryptedKey }
+    assert.include(
+      docProfile.documents.map(d => d.document.toBase58()),
+      documentPDAs[0].toBase58()
+    );
   });
 
   it("Revokes access from doctor", async () => {
@@ -178,7 +193,10 @@ describe("contract", () => {
     assert.notInclude(doc.accessList.map(k => k.toBase58()), doctor.publicKey.toBase58());
 
     const docProfile = await program.account.doctorProfile.fetch(doctorPDA);
-    assert.notInclude(docProfile.documents.map(k => k.toBase58()), documentPDAs[0].toBase58());
+    assert.notInclude(
+      docProfile.documents.map(d => d.document.toBase58()),
+      documentPDAs[0].toBase58()
+    );
   });
 
   it("Deletes document", async () => {
