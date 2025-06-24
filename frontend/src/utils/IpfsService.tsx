@@ -51,8 +51,9 @@ class IPFSService {
     return CryptoJS.AES.encrypt(wordArray, encryptionKey).toString();
   }
 
-  private decryptFile(encryptedData: string, encryptionKey: string): ArrayBuffer {
-    const decrypted = CryptoJS.AES.decrypt(encryptedData, encryptionKey);
+  private decryptFile(encryptedData: ArrayBuffer, encryptionKey: string): ArrayBuffer {
+    const encryptedStr = new TextDecoder().decode(encryptedData); // ✅ convert back to string
+    const decrypted = CryptoJS.AES.decrypt(encryptedStr, encryptionKey);
     const uint8Array = this.convertWordArrayToUint8Array(decrypted);
     return uint8Array.buffer;
   }
@@ -314,7 +315,8 @@ class IPFSService {
         throw new Error(`Failed to download from IPFS: ${response.statusText}`);
       }
 
-      const encryptedData = await response.text();
+      const encryptedData = await response.arrayBuffer();
+
       console.log('✅ File fetched from IPFS');
 
       let aesKey: string;
@@ -360,7 +362,7 @@ class IPFSService {
       const decryptedBuffer = this.decryptFile(encryptedData, aesKey);
       console.log('✅ File decrypted');
 
-      return new Blob([decryptedBuffer]);
+      return new Blob([decryptedBuffer], { type: 'application/pdf' }); // ✅ force browser to treat it as PDF
     } catch (error) {
       console.error('🔥 downloadAndDecrypt error:', error);
       throw error;

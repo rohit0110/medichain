@@ -86,11 +86,12 @@ export default function DoctorDocumentPage() {
       {decryptedBlobUrl ? (
         <div className="bg-gray-900 p-4 rounded-md">
           <iframe
-            src={decryptedBlobUrl}
-            title="Decrypted Document"
-            className="w-full h-[80vh] border-0 rounded"
-            sandbox="allow-scripts"
-          />
+  src={decryptedBlobUrl}
+  title="Decrypted Document"
+  className="w-full h-[80vh] border-0 rounded"
+  allow="clipboard-read; clipboard-write"
+/>
+
         </div>
       ) : !isDecrypting && !error ? (
         <p className="text-gray-400">No document preview available.</p>
