@@ -6,10 +6,11 @@ declare_id!("98TGc38djoRGd7rczpJ2nJWgLv2oNpXrDcGkJ8n4kPDG");
 pub mod contract {
     use super::*;
 
-    pub fn initialize_document(ctx: Context<InitializeDocument>, ipfs_hash: String, title: String, description: String, salt: [u8;16]) -> Result<()> {
+    pub fn initialize_document(ctx: Context<InitializeDocument>, ipfs_hash: String, title: String, description: String, salt: [u8;16], encrypted_key: Vec<u8>) -> Result<()> {
         let document = &mut ctx.accounts.document;
         document.ipfs_hash = ipfs_hash;
         document.title = title;
+        document.encrypted_key = encrypted_key;
         document.description = description;
         document.salt = salt;
         document.owner = ctx.accounts.user.key();
@@ -26,15 +27,16 @@ pub mod contract {
         patient_profile.documents = vec![]; // Initialize with an empty document list
         Ok(())
     }
-
-    pub fn initialize_doctor_profile(ctx: Context<InitializeDoctor>) -> Result<()> {
+    //create a keypair before initializing, store publickey CURVE25519 here, will be used for encrypting whever doctors wallets publickey is used
+    pub fn initialize_doctor_profile(ctx: Context<InitializeDoctor>, encryption_key: [u8;32]) -> Result<()> {
         let doctor_profile = &mut ctx.accounts.doctor_profile;
         doctor_profile.user = ctx.accounts.user.key();
+        doctor_profile.encryption_key = encryption_key;
         doctor_profile.documents = Vec::with_capacity(10); // Initialize with an empty document list
         Ok(())
     }
 
-    pub fn grant_access(ctx: Context<ModifyAccess>, doctor_pubkey: Pubkey, _ipfs_hash: String, encrypted_key: [u8;256]) -> Result<()> {
+    pub fn grant_access(ctx: Context<ModifyAccess>, doctor_pubkey: Pubkey, _ipfs_hash: String, encrypted_key: Vec<u8>) -> Result<()> {
         let document = &mut ctx.accounts.document;
         let doctor_profile = &mut ctx.accounts.doctor_profile;
         let access_grant = AccessGrant {
@@ -191,6 +193,8 @@ pub struct DeleteDocument<'info> {
 pub struct Document {
     #[max_len(64)]
     pub ipfs_hash: String,
+    #[max_len(256)]
+    pub encrypted_key: Vec<u8>,
     #[max_len(64)]
     pub title: String,
     #[max_len(256)]
@@ -213,6 +217,7 @@ pub struct PatientProfile {
 #[derive(InitSpace)]
 pub struct DoctorProfile {
     pub user: Pubkey,
+    pub encryption_key: [u8;32],
     #[max_len(10)]
     pub documents: Vec<AccessGrant>
 }
@@ -220,7 +225,8 @@ pub struct DoctorProfile {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
 pub struct AccessGrant {
     pub document: Pubkey,
-    pub encrypted_key: [u8; 256], 
+    #[max_len(256)]
+    pub encrypted_key: Vec<u8>, 
 }
 
 #[error_code]

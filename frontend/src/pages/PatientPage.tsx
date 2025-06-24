@@ -16,7 +16,7 @@ interface Document {
   fileSize?: number;
   contentType?: string;
   salt?: string;
-  aes_key?: string;
+  encryptedKey?: number[]; // [u8; 256] encrypted AES key
 }
 
 const dummyDocuments: Document[] = [];
@@ -49,100 +49,53 @@ export default function PatientPage() {
   };
 
   const handleUpload = async (file: File, title: string, description?: string) => {
-    // Prevent double execution
-    if (isUploading) {
-      console.log('Upload already in progress, skipping...');
-      return;
-    }
-
-    // Comprehensive validation
-    if (!connected || !wallet) {
-      throw new Error('Wallet not connected');
-    }
-
-    if (!publicKey) {
-      throw new Error('Public key not available');
-    }
-
-    if (!signMessage) {
-      throw new Error('Wallet does not support message signing');
-    }
-
-    if (!sendTransaction) {
-      throw new Error('Wallet does not support transaction sending');
+    if (isUploading) return;
+    if (!connected || !wallet || !publicKey || !signMessage || !sendTransaction) {
+      throw new Error('Wallet not ready');
     }
 
     setIsUploading(true);
 
     try {
-      console.log('=== UPLOAD PROCESS STARTED ===');
-      console.log('Wallet:', wallet.adapter.name);
-      console.log('Connected:', connected);
-      console.log('Public Key:', publicKey.toString());
-
-      // Step 1: Verify patient profile exists
-      console.log('Step 1: Checking patient profile...');
+      console.log('=== Upload Process Started ===');
       const profilePDA = getPatientProfilePDA(publicKey);
-      console.log('Profile PDA:', profilePDA.toString());
+      const profile = await program.account.patientProfile.fetch(profilePDA);
 
-      let profile;
-      try {
-        profile = await program.account.patientProfile.fetch(profilePDA);
-        console.log('✅ Profile exists with', profile.documents.length, 'documents');
-      } catch (error) {
-        console.error('❌ Profile fetch failed:', error);
-        throw new Error('Patient profile not found. Please create your profile first by selecting your role.');
-      }
-
-      // Step 2: Generate encryption data
-      console.log('Step 2: Generating encryption data...');
+      // Step 1: Generate unique salt & document ID
       const salt = WalletEncryptionService.generateSalt();
-      const documentId = docs.length + 1;
-      
-      console.log('Document ID:', documentId);
-      console.log('Salt generated:', salt.substring(0, 8) + '...');
+      const documentId = profile.documents.length + 1;
 
-      // Step 3: Generate encryption key
-      console.log('Step 3: Generating encryption key...');
-      const encryptionKey = await WalletEncryptionService.generateEncryptionKey(
+      // Step 2: Derive AES encryption key using wallet signature
+      const encryptionKeyHex = await WalletEncryptionService.generateEncryptionKey(
         { signMessage },
         documentId,
         file.name,
         salt
       );
-      console.log('✅ Encryption key generated');
 
-      // Step 4: Encrypt file
-      console.log('Step 4: Encrypting file...');
+      // Step 3: Encrypt file with derived AES key
       const fileBuffer = await file.arrayBuffer();
-      console.log('File size:', fileBuffer.byteLength, 'bytes');
-      
-      const encryptedData = WalletEncryptionService.encryptFile(fileBuffer, encryptionKey);
-      console.log('✅ File encrypted, size:', encryptedData.length, 'bytes');
+      const encryptedData = WalletEncryptionService.encryptFile(fileBuffer, encryptionKeyHex);
 
-      // Step 5: Upload to IPFS
-      console.log('Step 5: Uploading to IPFS...');
+      // Step 4: Upload encrypted file to IPFS
       const ipfsHash = await ipfsService.uploadEncryptedToIPFS(encryptedData, file);
-      console.log('✅ IPFS upload complete:', ipfsHash);
 
-      // Step 6: Prepare blockchain transaction
-      console.log('Step 6: Preparing blockchain transaction...');
-      const docIndex = profile.documents.length;
-      
-      const docPDA = getDocumentPDA(publicKey, ipfsHash);
-      
-      console.log('Document PDA:', docPDA.toString());
-      console.log('Document index:', docIndex);
+      // Step 5: Encrypt the AES key with itself (as storage encryption method)
+      const encryptedKeyBytes = await WalletEncryptionService.encryptAESKeyWithWallet(
+        encryptionKeyHex,
+        { signMessage },
+        salt
+      );
 
-      // Convert salt to byte array
+
+      // Step 6: Prepare 16-byte salt array
       const saltBytes = hexToU8Array16(salt);
-      console.log('Salt bytes length:', saltBytes.length);
 
-      // Step 7: Create transaction
-      console.log('Step 7: Creating transaction...');
-      console.log('Calling initializeDocument RPC...');
+      // Step 7: Submit Solana transaction to store document metadata
+      const docPDA = getDocumentPDA(publicKey, ipfsHash);
+
       const tx = await program.methods
-        .initializeDocument(ipfsHash, title, description || '', saltBytes)
+        .initializeDocument(ipfsHash, title, description || '', saltBytes, Buffer.from(encryptedKeyBytes))
         .accounts({
           patientProfile: profilePDA,
           document: docPDA,
@@ -150,20 +103,19 @@ export default function PatientPage() {
           systemProgram: SystemProgram.programId,
         })
         .transaction();
-      tx.feePayer = publicKey!;
+
+      tx.feePayer = publicKey;
       tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-      console.log('Transaction created, sending...');
 
       const simulation = await connection.simulateTransaction(tx);
-      console.log('🧪 Transaction simulation result:', simulation);
+      console.log('🧪 Simulated:', simulation);
 
       const txSig = await sendTransaction(tx, connection);
-      console.log(
-        `Document Created! View transaction: https://solana.fm/tx/${txSig}?cluster=devnet-alpha`
-      );
+      await connection.confirmTransaction(txSig, 'confirmed');
 
-      // Step 8: Update local state
-      console.log('Step 8: Updating local state...');
+      console.log(`✅ Document created! https://solana.fm/tx/${txSig}?cluster=devnet-alpha`);
+
+      // Step 8: Update document state for UI (used in routing or display)
       setDocs(prev => [
         ...prev,
         {
@@ -174,40 +126,23 @@ export default function PatientPage() {
           fileSize: file.size,
           contentType: file.type,
           salt,
-          aes_key: encryptionKey,
+          encryptedKey: Array.from(encryptedKeyBytes),
         },
       ]);
 
       setIsModalOpen(false);
-      console.log('=== UPLOAD PROCESS COMPLETED SUCCESSFULLY ===');
-      
     } catch (err) {
-      console.error('=== UPLOAD PROCESS FAILED ===');
-      console.error('Error:', err);
-      
-      // Enhanced error logging
+      console.error('❌ Upload failed', err);
       if (err instanceof Error) {
-        console.error('Error name:', err.name);
         console.error('Error message:', err.message);
-        console.error('Error stack:', err.stack);
       }
-      
-      // Check for specific wallet errors
-      if (err && typeof err === 'object') {
-        const errorObj = err as Record<string, unknown>;
-        if (errorObj.logs) {
-          console.error('Transaction logs:', errorObj.logs);
-        }
-        if (errorObj.code) {
-          console.error('Error code:', errorObj.code);
-        }
-      }
-      
       throw err;
     } finally {
       setIsUploading(false);
     }
   };
+
+
 
   useEffect(() => {
     const fetchOnchainDocs = async () => {
@@ -248,6 +183,7 @@ export default function PatientPage() {
           title: string;
           ipfsHash?: string;
           salt?: number[];
+          encryptedKey?: Uint8Array | Buffer;
         }
 
         const formatted: Document[] = documentAccounts.map((doc: OnChainDocument, i: number) => ({
@@ -255,7 +191,9 @@ export default function PatientPage() {
           title: doc.title,
           ipfsHash: doc.ipfsHash,
           salt: doc.salt ? doc.salt.map(b => b.toString(16).padStart(2, '0')).join('') : undefined,
+          encryptedKey: doc.encryptedKey ? Array.from(doc.encryptedKey) : undefined,
         }));
+
 
         setDocs(formatted);
         console.log('Loaded', formatted.length, 'documents from blockchain');

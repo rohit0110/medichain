@@ -47,6 +47,10 @@ export type Contract = {
               16
             ]
           }
+        },
+        {
+          "name": "encryptedKey",
+          "type": "bytes"
         }
       ]
     },
@@ -90,7 +94,17 @@ export type Contract = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "encryptionKey",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "grantAccess",
@@ -127,12 +141,7 @@ export type Contract = {
         },
         {
           "name": "encryptedKey",
-          "type": {
-            "array": [
-              "u8",
-              256
-            ]
-          }
+          "type": "bytes"
         }
       ]
     },
@@ -214,6 +223,10 @@ export type Contract = {
             "type": "string"
           },
           {
+            "name": "encryptedKey",
+            "type": "bytes"
+          },
+          {
             "name": "title",
             "type": "string"
           },
@@ -271,6 +284,15 @@ export type Contract = {
             "type": "publicKey"
           },
           {
+            "name": "encryptionKey",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
             "name": "documents",
             "type": {
               "vec": {
@@ -294,12 +316,7 @@ export type Contract = {
           },
           {
             "name": "encryptedKey",
-            "type": {
-              "array": [
-                "u8",
-                256
-              ]
-            }
+            "type": "bytes"
           }
         ]
       }
@@ -368,6 +385,10 @@ export const IDL: Contract = {
               16
             ]
           }
+        },
+        {
+          "name": "encryptedKey",
+          "type": "bytes"
         }
       ]
     },
@@ -411,7 +432,17 @@ export const IDL: Contract = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "encryptionKey",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "grantAccess",
@@ -448,12 +479,7 @@ export const IDL: Contract = {
         },
         {
           "name": "encryptedKey",
-          "type": {
-            "array": [
-              "u8",
-              256
-            ]
-          }
+          "type": "bytes"
         }
       ]
     },
@@ -535,6 +561,10 @@ export const IDL: Contract = {
             "type": "string"
           },
           {
+            "name": "encryptedKey",
+            "type": "bytes"
+          },
+          {
             "name": "title",
             "type": "string"
           },
@@ -592,6 +622,15 @@ export const IDL: Contract = {
             "type": "publicKey"
           },
           {
+            "name": "encryptionKey",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
             "name": "documents",
             "type": {
               "vec": {
@@ -615,12 +654,7 @@ export const IDL: Contract = {
           },
           {
             "name": "encryptedKey",
-            "type": {
-              "array": [
-                "u8",
-                256
-              ]
-            }
+            "type": "bytes"
           }
         ]
       }

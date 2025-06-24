@@ -2,10 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { getPatientProfilePDA,getDoctorProfilePDA, program } from '../anchor/setup';
 import { SystemProgram } from '@solana/web3.js';
+import { ipfsService } from '../utils/IpfsService';
 
 const RoleSelector = () => {
   const navigate = useNavigate();
-  const { wallet, connected, publicKey, sendTransaction } = useWallet();
+  const { wallet, connected, publicKey, sendTransaction, signMessage } = useWallet();
   const connection = program.provider.connection;
 
   const handleRoleSelect = async (role: 'doctor' | 'patient') => {
@@ -55,8 +56,18 @@ const RoleSelector = () => {
           navigate(`/dashboard/doctor`);
           return;
         }
+        // Create WalletSigner object
+      const walletSigner = {
+        signMessage: signMessage!,
+        publicKey: wallet.adapter.publicKey!,
+      };
+        //create a key pair here on curve25519, private key should be determined from wallet sign? 
+        const encryption_key = await ipfsService.createEncryptionKeypair(walletSigner);
+        // Convert Uint8Array to number[]
+        const encryptionKeyArray = Array.from(encryption_key);
+        console.log(encryptionKeyArray);
         const tx = await program.methods
-          .initializeDoctorProfile()
+          .initializeDoctorProfile(encryptionKeyArray)
           .accounts({
             doctorProfile: doctorProfilePDA,
             user: publicKey,

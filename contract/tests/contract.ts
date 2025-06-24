@@ -3,6 +3,8 @@ import { Program } from "@coral-xyz/anchor";
 import { Contract } from "../target/types/contract";
 import { assert } from "chai";
 import { createHash } from "crypto";
+import bs58 from 'bs58';
+const CryptoJS = require('crypto-js');
 
 
 describe("contract", () => {
@@ -94,6 +96,15 @@ describe("contract", () => {
 
   it("Creates multiple documents for patient", async () => {
     const [patientPDA] = getPatientProfilePDA();
+    const dummyAESKey = "KEY12345678901234567890123456789012";
+    const encryptedBase64 = CryptoJS.AES.encrypt(dummyAESKey, dummyAESKey).toString(); // returns base64
+
+    // 3. Convert base64 string to Uint8Array
+    const encoded = new TextEncoder().encode(encryptedBase64);
+
+    // 4. Pad or truncate to 576 bytes exactly
+    const encryptedAESKey = new Uint8Array(576);
+    encryptedAESKey.set(encoded.slice(0, 576));
 
     for (let i = 0; i < ipfsHashes.length; i++) {
       const ipfsHash = ipfsHashes[i];
@@ -101,7 +112,7 @@ describe("contract", () => {
       const [docPDA] = getDocumentPDA(ipfsHash);
       documentPDAs.push(docPDA);
 
-      await program.methods.initializeDocument(ipfsHash, `Title ${i + 1}`, `Description ${i + 1}`, salt)
+      await program.methods.initializeDocument(ipfsHash, `Title ${i + 1}`, `Description ${i + 1}`, salt, Array.from(encryptedAESKey))
         .accounts({
           document: docPDA,
           patientProfile: patientPDA,

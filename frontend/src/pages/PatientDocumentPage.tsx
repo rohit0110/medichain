@@ -4,6 +4,7 @@ import { getDoctorProfilePDA, getDocumentPDA, program, connection } from '../anc
 import { PublicKey, SystemProgram } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { ipfsService } from '../utils/IpfsService';
+import { WalletEncryptionService } from '../utils/WalletEncryption';
 
 export default function PatientDocumentPage() {
   const location = useLocation();
@@ -13,11 +14,12 @@ export default function PatientDocumentPage() {
       title: string;
       ipfsHash: string;
       description?: string;
-      aesKey?: string;
+      encryptedKey: Uint8Array | Buffer;
+      salt?: string;
     };
   };
 
-  const { publicKey, sendTransaction } = useWallet();
+  const { publicKey, sendTransaction, signMessage } = useWallet();
 
   const [walletInput, setWalletInput] = useState('');
   const [allowedWallets, setAllowedWallets] = useState<string[]>([]);
@@ -55,6 +57,7 @@ export default function PatientDocumentPage() {
 
   // Fetch access list on component mount and when dependencies change
   useEffect(() => {
+    console.log(doc)
     fetchAccessList();
   }, [publicKey, doc.ipfsHash, documentPda]);
 
@@ -83,11 +86,18 @@ export default function PatientDocumentPage() {
         console.error('❌ Doctor profile does not exist on-chain');
         return;
       }
-      const encryptedKeyUint8 = ipfsService.encryptAESKeyForRecipient(doc.aesKey!, doctorPubKey);
-      const encryptedKey = Array.from(encryptedKeyUint8);
-
+      if (!signMessage) {
+        throw new Error('Wallet does not support message signing.');
+      }
+      const rawAESKey = await WalletEncryptionService.decryptAESKeyWithWallet(
+        Array.from(doc.encryptedKey),
+        { signMessage },
+        doc.salt!,
+      );
+      const encryptedKeyUint8 = await ipfsService.encryptAESKeyForRecipient(rawAESKey, new Uint8Array(doctorProfile.encryptionKey));
+      console.log(doctorProfile.encryptionKey);
       const tx = await program.methods
-        .grantAccess(doctorPubKey, doc.ipfsHash, encryptedKey)
+        .grantAccess(doctorPubKey, doc.ipfsHash, Buffer.from(encryptedKeyUint8))
         .accounts({
           document: documentPda,
           owner: publicKey,
